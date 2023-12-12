@@ -241,7 +241,7 @@ public protocol PaymentIntentRoutes: StripeAPIRoute {
     ///   - limit: A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
     ///   - page: A cursor for pagination across multiple pages of results. Don’t include this parameter on the first call. Use the `next_page` value returned in a previous response to request subsequent results.
     /// - Returns: A dictionary with a data property that contains an array of up to limit PaymentIntents. If no objects match the query, the resulting array will be empty. See the related guide on expanding properties in lists.
-    func search(query: String, limit: Int?, page: String?) async throws -> PaymentIntentSearchResult
+    func search(query: String, expand:[String]?, limit: Int?, page: String?) async throws -> PaymentIntentSearchResult
     
     /// Verifies microdeposits on a PaymentIntent object.
     /// - Parameters:
@@ -706,9 +706,17 @@ public struct StripePaymentIntentRoutes: PaymentIntentRoutes {
     }
     
     public func search(query: String,
+                       expand:[String]? = nil,
                        limit: Int? = nil,
                        page: String? = nil) async throws -> PaymentIntentSearchResult {
         var queryParams: [String: Any] = ["query": query]
+        
+        var body: [String: Any] = [:]
+        
+        if let expand {
+            body["expand"] = expand
+        }
+        
         if let limit {
             queryParams["limit"] = limit
         }
@@ -717,7 +725,7 @@ public struct StripePaymentIntentRoutes: PaymentIntentRoutes {
             queryParams["page"] = page
         }
         
-        return try await apiHandler.send(method: .GET, path: "\(paymentintents)/search", query: queryParams.queryParameters, headers: headers)
+        return try await apiHandler.send(method: .GET, path: "\(paymentintents)/search", query: queryParams.queryParameters, body: .string(body.queryParameters), headers: headers)
     }
     
     public func verifyMicroDeposits(intent: String,

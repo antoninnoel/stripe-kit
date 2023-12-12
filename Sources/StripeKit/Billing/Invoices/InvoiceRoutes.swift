@@ -232,7 +232,7 @@ public protocol InvoiceRoutes: StripeAPIRoute {
     ///   - limit: A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
     ///   - page: A cursor for pagination across multiple pages of results. Don’t include this parameter on the first call. Use the `next_page` value returned in a previous response to request subsequent results.
     /// - Returns: A dictionary with a `data` property that contains an array of up to `limit` invoices. If no objects match the query, the resulting array will be empty. See the related guide on expanding properties in lists.
-    func search(query: String, limit: Int?, page: String?) async throws -> InvoiceSearchResult
+    func search(query: String, expand:[String]?, limit: Int?, page: String?) async throws -> InvoiceSearchResult
 }
 
 public struct StripeInvoiceRoutes: InvoiceRoutes {
@@ -645,8 +645,15 @@ public struct StripeInvoiceRoutes: InvoiceRoutes {
         return try await apiHandler.send(method: .GET, path: invoices, query: queryParams, headers: headers)
     }
     
-    public func search(query: String, limit: Int? = nil, page: String? = nil) async throws -> InvoiceSearchResult {
+    public func search(query: String, expand:[String]? = nil, limit: Int? = nil, page: String? = nil) async throws -> InvoiceSearchResult {
         var queryParams: [String: Any] = ["query": query]
+        
+        var body: [String: Any] = [:]
+        
+        if let expand {
+            body["expand"] = expand
+        }
+        
         if let limit {
             queryParams["limit"] = limit
         }
@@ -655,6 +662,6 @@ public struct StripeInvoiceRoutes: InvoiceRoutes {
             queryParams["page"] = page
         }
         
-        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, headers: headers)
+        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, body: .string(body.queryParameters), headers: headers)
     }
 }

@@ -134,7 +134,7 @@ public protocol CustomerRoutes: StripeAPIRoute {
     ///   - page: A cursor for pagination across multiple pages of results. Don’t include this parameter on the first call. Use the `next_page` value returned in a previous response to request subsequent results.
     ///   - expand: Specifies which fields in the response should be expanded.
     /// - Returns: A dictionary with a data property that contains an array of up to limit customers. If no objects match the query, the resulting array will be empty. See the related guide on expanding properties in lists.
-    func search(query: String, limit: Int?, page: String?, expand: [String]?) async throws -> CustomerSearchResult
+    func search(query: String, expand:[String]?, limit: Int?, page: String?) async throws -> CustomerSearchResult
 }
 
 public struct StripeCustomerRoutes: CustomerRoutes {
@@ -401,10 +401,17 @@ public struct StripeCustomerRoutes: CustomerRoutes {
     }
     
     public func search(query: String,
+                       expand: [String]? = nil,
                        limit: Int? = nil,
-                       page: String? = nil,
-                       expand: [String]? = nil) async throws -> CustomerSearchResult {
+                       page: String? = nil) async throws -> CustomerSearchResult {
         var queryParams: [String: Any] = ["query": query]
+        
+        var body: [String: Any] = [:]
+        
+        if let expand {
+            body["expand"] = expand
+        }
+        
         if let limit {
             queryParams["limit"] = limit
         }
@@ -413,6 +420,6 @@ public struct StripeCustomerRoutes: CustomerRoutes {
             queryParams["page"] = page
         }
         
-        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, headers: headers)
+        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, body: .string(body.queryParameters), headers: headers)
     }
 }

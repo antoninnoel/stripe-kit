@@ -217,7 +217,7 @@ public protocol SubscriptionRoutes: StripeAPIRoute {
     ///   - limit: A limit on the number of objects to be returned. Limit can range between 1 and 100, and the default is 10.
     ///   - page: A cursor for pagination across multiple pages of results. Don’t include this parameter on the first call. Use the `next_page` value returned in a previous response to request subsequent results.
     /// - Returns: A dictionary with a `data` property that contains an array of up to `limit` subscriptions. If no objects match the query, the resulting array will be empty. See the related guide on expanding properties in lists.
-    func search(query: String, limit: Int?, page: String?) async throws -> SubscriptionSearchResult
+    func search(query: String, expand:[String]?, limit: Int?, page: String?) async throws -> SubscriptionSearchResult
 }
 
 public struct StripeSubscriptionRoutes: SubscriptionRoutes {
@@ -613,8 +613,18 @@ public struct StripeSubscriptionRoutes: SubscriptionRoutes {
         return try await apiHandler.send(method: .GET, path: subscriptions, query: queryParams, headers: headers)
     }
     
-    public func search(query: String, limit: Int? = nil, page: String? = nil) async throws -> SubscriptionSearchResult {
+    public func search(query: String, 
+                       expand:[String]? = nil,
+                       limit: Int? = nil,
+                       page: String? = nil) async throws -> SubscriptionSearchResult {
         var queryParams: [String: Any] = ["query": query]
+        
+        var body: [String: Any] = [:]
+        
+        if let expand {
+            body["expand"] = expand
+        }
+        
         if let limit {
             queryParams["limit"] = limit
         }
@@ -623,6 +633,6 @@ public struct StripeSubscriptionRoutes: SubscriptionRoutes {
             queryParams["page"] = page
         }
         
-        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, headers: headers)
+        return try await apiHandler.send(method: .GET, path: search, query: queryParams.queryParameters, body: .string(body.queryParameters), headers: headers)
     }
 }
